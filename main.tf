@@ -7,10 +7,6 @@ terraform {
   }
 }
 
-# --- Provider ---
-provider "aws" {
-  region = "us-east-1"
-}
 
 # --- VPC ---
 resource "aws_vpc" "main" {
@@ -121,7 +117,3 @@ resource "aws_route_table_association" "private_assoc_1b" {
   route_table_id = aws_route_table.private_rt.id
 }
 
-# --- Outputs ---
-output "vpc_id" {
-  value = aws_vpc.main.id
-}
