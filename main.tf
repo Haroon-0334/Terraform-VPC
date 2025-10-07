@@ -1,3 +1,11 @@
+terraform {
+  backend "s3" {
+    bucket = "terraform-state-haroon-0334"   # change this to your real S3 bucket name
+    key    = "vpc/terraform.tfstate"
+    region = "us-east-1"
+  }
+}
+
 # Create VPC
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
