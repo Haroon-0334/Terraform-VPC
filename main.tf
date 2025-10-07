@@ -6,9 +6,7 @@ terraform {
   }
 }
 
-provider "aws" {
-  region = "us-east-1"
-}
+
 
 # -------------------------------
 # VPC
@@ -134,9 +132,7 @@ resource "aws_route_table_association" "private_assoc_2" {
 # -------------------------------
 # Outputs
 # -------------------------------
-output "vpc_id" {
-  value = aws_vpc.main.id
-}
+
 
 output "public_subnets" {
   value = [aws_subnet.public_subnet_1.id, aws_subnet.public_subnet_2.id]
