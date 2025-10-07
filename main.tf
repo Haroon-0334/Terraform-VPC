@@ -1,16 +1,18 @@
+# --- Backend Configuration ---
 terraform {
   backend "s3" {
-    bucket = "terraform-state-haroon-0334"   # Replace with your S3 bucket
+    bucket = "terraform-state-haroon-0334"
     key    = "vpc/terraform.tfstate"
     region = "us-east-1"
   }
 }
 
+# --- Provider ---
+provider "aws" {
+  region = "us-east-1"
+}
 
-
-# -------------------------------
-# VPC
-# -------------------------------
+# --- VPC ---
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true
@@ -21,36 +23,40 @@ resource "aws_vpc" "main" {
   }
 }
 
-# -------------------------------
-# Subnets
-# -------------------------------
+# --- Internet Gateway ---
+resource "aws_internet_gateway" "igw" {
+  vpc_id = aws_vpc.main.id
 
-# Public Subnet 1
-resource "aws_subnet" "public_subnet_1" {
+  tags = {
+    Name = "MyVPC-IGW"
+  }
+}
+
+# --- Public Subnets ---
+resource "aws_subnet" "public_1a" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.1.0/24"
-  map_public_ip_on_launch = true
   availability_zone       = "us-east-1a"
+  map_public_ip_on_launch = true
 
   tags = {
     Name = "PublicSubnet1"
   }
 }
 
-# Public Subnet 2
-resource "aws_subnet" "public_subnet_2" {
+resource "aws_subnet" "public_1b" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.2.0/24"
-  map_public_ip_on_launch = true
   availability_zone       = "us-east-1b"
+  map_public_ip_on_launch = true
 
   tags = {
     Name = "PublicSubnet2"
   }
 }
 
-# Private Subnet 1
-resource "aws_subnet" "private_subnet_1" {
+# --- Private Subnets ---
+resource "aws_subnet" "private_1a" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = "10.0.3.0/24"
   availability_zone = "us-east-1a"
@@ -60,8 +66,7 @@ resource "aws_subnet" "private_subnet_1" {
   }
 }
 
-# Private Subnet 2
-resource "aws_subnet" "private_subnet_2" {
+resource "aws_subnet" "private_1b" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = "10.0.4.0/24"
   availability_zone = "us-east-1b"
@@ -71,18 +76,7 @@ resource "aws_subnet" "private_subnet_2" {
   }
 }
 
-# -------------------------------
-# Internet Gateway & Public Routing
-# -------------------------------
-
-resource "aws_internet_gateway" "igw" {
-  vpc_id = aws_vpc.main.id
-
-  tags = {
-    Name = "MyVPC-IGW"
-  }
-}
-
+# --- Public Route Table ---
 resource "aws_route_table" "public_rt" {
   vpc_id = aws_vpc.main.id
 
@@ -96,20 +90,7 @@ resource "aws_route_table" "public_rt" {
   }
 }
 
-# Associate both public subnets with the public route table
-resource "aws_route_table_association" "public_assoc_1" {
-  subnet_id      = aws_subnet.public_subnet_1.id
-  route_table_id = aws_route_table.public_rt.id
-}
-
-resource "aws_route_table_association" "public_assoc_2" {
-  subnet_id      = aws_subnet.public_subnet_2.id
-  route_table_id = aws_route_table.public_rt.id
-}
-
-# -------------------------------
-# Private Routing (no internet access)
-# -------------------------------
+# --- Private Route Table ---
 resource "aws_route_table" "private_rt" {
   vpc_id = aws_vpc.main.id
 
@@ -118,26 +99,29 @@ resource "aws_route_table" "private_rt" {
   }
 }
 
-# Associate both private subnets with private route table
-resource "aws_route_table_association" "private_assoc_1" {
-  subnet_id      = aws_subnet.private_subnet_1.id
+# --- Associate Public Subnets with Public Route Table ---
+resource "aws_route_table_association" "public_assoc_1a" {
+  subnet_id      = aws_subnet.public_1a.id
+  route_table_id = aws_route_table.public_rt.id
+}
+
+resource "aws_route_table_association" "public_assoc_1b" {
+  subnet_id      = aws_subnet.public_1b.id
+  route_table_id = aws_route_table.public_rt.id
+}
+
+# --- Associate Private Subnets with Private Route Table ---
+resource "aws_route_table_association" "private_assoc_1a" {
+  subnet_id      = aws_subnet.private_1a.id
   route_table_id = aws_route_table.private_rt.id
 }
 
-resource "aws_route_table_association" "private_assoc_2" {
-  subnet_id      = aws_subnet.private_subnet_2.id
+resource "aws_route_table_association" "private_assoc_1b" {
+  subnet_id      = aws_subnet.private_1b.id
   route_table_id = aws_route_table.private_rt.id
 }
 
-# -------------------------------
-# Outputs
-# -------------------------------
-
-
-output "public_subnets" {
-  value = [aws_subnet.public_subnet_1.id, aws_subnet.public_subnet_2.id]
-}
-
-output "private_subnets" {
-  value = [aws_subnet.private_subnet_1.id, aws_subnet.private_subnet_2.id]
+# --- Outputs ---
+output "vpc_id" {
+  value = aws_vpc.main.id
 }
